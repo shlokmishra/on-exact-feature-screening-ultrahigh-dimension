@@ -2,12 +2,13 @@ rm(list = ls())
 #------------------------------------------------------------------------------
 set.seed(123)
 REP = 100 # number of iterations to run.
-trn.sz.perClass = 100 # size of training sample from each class in all simulated examples Ex 1- 16 except Ex 8
-tst.sz.perClass = 250 # size of test sample from each class in all simulated examples
-OS.var = readline(prompt = 'If you are on Windows, please type "W". Otherwise type "O": ')
-cluster.type = ifelse(OS.var == 'W', 'PSOCK', 'FORK')
+trn.sz.perClass = 10 # size of training sample from each class in all simulated examples Ex 1- 16 except Ex 8
+tst.sz.perClass = 25 # size of test sample from each class in all simulated examples
+# OS.var = readline(prompt = 'If you are on Windows, please type "W". Otherwise type "O": ')
+# cluster.type = ifelse(OS.var == 'W', 'PSOCK', 'FORK')
+cluster.type = 'PSOCK'
 #------------------------------------------------------------------------------
-EXNAMES = paste('ex', 1:16, sep = '')
+EXNAMES = paste('ex', 2, sep = '')
 #------------------------------------------------------------------------------
 PCKG = c(
   'energy',
@@ -46,6 +47,8 @@ pb = ERR = NULL
 gamfuns = c('gexp', 'gsqrt', 'glog') #choice of gamma functions
 d = 10 #dimension
 revmu = 0.75 # the difference in mean for the marginal signal in examples 9-16
+
+exID = EXNAMES[1]
 
 for (exID in EXNAMES) {
   switch (
@@ -587,6 +590,7 @@ for (exID in EXNAMES) {
           )
         )
       },
+      
       ex11 = {
         pop1 = cbind(
           mvrnorm(
@@ -699,6 +703,9 @@ for (exID in EXNAMES) {
     tmp = NULL
     
     clusterExport(cl, c('train.set', 'test.set'))
+    
+    gf = gamfuns[1]
+    
     for (gf in gamfuns) {
       clusterExport(cl, c('gf'))
       
