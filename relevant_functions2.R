@@ -1,5 +1,30 @@
 # This file contains all the necessary functions that are required to execute the main file : SimulationStudy_ReviewResponse_JCGS_optimizedParallel.R
 ###############################################################################
+
+ks_test_1d <- function(train.set, n1train, n2train) {
+  d = ncol(train.set)
+  
+  # Initialize an array to hold the KS statistics for each dimension
+  ks_stats = rep(0, d)
+  
+  for (i in 1:d) {
+    # Separate the data for the first and second distributions
+    data1 = train.set[1:n1train, i]
+    data2 = train.set[(n1train + 1):(n1train + n2train), i]
+    
+    
+    # Perform the Kolmogorov-Smirnov test using the built-in ks.test function
+    ks_result = ks.test(data1, data2)
+    ks_statistic_formatted = sprintf("%.10f", ks_result$statistic)
+    
+    # Store the KS statistic
+    ks_stats[i] = ks_result$statistic
+  }
+  
+  return(ks_stats)
+}
+
+
 cycl <-
   function(vec)
     # function is required to generate data from signed multivariate normal distribution
@@ -42,7 +67,7 @@ gexpFuncPtr <-
     double tmp;
     tmp = arma::accu(1 - exp(-(arma::square(A - B))));
  return  tmp;}",
-    depends = c("RcppArmadillo")
+ depends = c("RcppArmadillo")
   )
 
 
@@ -63,7 +88,7 @@ glogFuncPtr <-
     double tmp;
     tmp = arma::accu( log(1 + arma::square(A - B)));
  return  tmp;}",
-    depends = c("RcppArmadillo")
+ depends = c("RcppArmadillo")
   )
 
 
@@ -84,7 +109,7 @@ gsqrtFuncPtr <-
     double tmp;
     tmp = arma::accu((arma::abs(A - B)));
  return  tmp;}",
-    depends = c("RcppArmadillo")
+ depends = c("RcppArmadillo")
   )
 #######################################################################
 
@@ -470,7 +495,7 @@ fun2.block <- function(x, blocked.train.SW, gamfun)
   return(out)
 }
 
-# fun2.block <- function(x, blocked.train.SW)
+# fun2.block <- function(x, blocked.train.SW, gamfun)
 # {
 #   n.train <- nrow(blocked.train.SW[[1]])
 #   repx <-
@@ -484,6 +509,24 @@ fun2.block <- function(x, blocked.train.SW, gamfun)
 #       return(ks.teststat)
 #     })
 #   t1 <- do.call('cbind', temprep)
+#   if (ncol(t1) > 1) {
+#         out = switch(
+#           gamfun,
+#           gexp = rowMeans(1 - exp(-t1)),
+#           gsqrt = rowMeans(sqrt(t1)),
+#           glog = rowMeans(log(1 + t1)),
+#           grat = rowMeans(t1 / (1 + t1))
+#         )
+#       } else{
+#         out = switch(
+#           gamfun,
+#           gexp = 1 - exp(-t1),
+#           gsqrt = sqrt(t1),
+#           glog = log(1 + t1),
+#           grat = t1 / (1 + t1)
+#         )
+#       }
+#   out <- rowMeans(gamfun(t1))
 #   # proc.time()-ptm
 #   rm(list = c('repx', 'temprep', 't1'))
 #   
@@ -605,7 +648,8 @@ bgSAVG.real <-
 #            blocked.train.SW,
 #            n1train,
 #            n2train,
-#            SW.distmat) {
+#            SW.distmat,
+#            gamfun) {
 #     n.train <- nrow(blocked.train.SW[[1]])
 #     tmp.tmp <- blocked.train.SW
 #     repz <-
@@ -618,7 +662,23 @@ bgSAVG.real <-
 #         return(ks.teststat)
 #       })
 #     t1 <- do.call('cbind', temprep)
-#     
+#     if (ncol(t1) > 1) {
+#             obj = switch(
+#               gamfun,
+#               gexp = rowMeans(1 - exp(-t1)),
+#               gsqrt = rowMeans(sqrt(t1)),
+#               glog = rowMeans(log(1 + t1)),
+#               grat = rowMeans(t1 / (1 + t1))
+#             )
+#           } else{
+#             obj = switch(
+#               gamfun,
+#               gexp = 1 - exp(-t1),
+#               gsqrt = sqrt(t1),
+#               glog = log(1 + t1),
+#               grat = t1 / (1 + t1)
+#             )
+#           }
 #     rm(list = c('tmp.tmp', 'repz', 't1', 'temprep'))
 #     
 #     T1 <- mean(obj[1:n1train])
@@ -660,11 +720,11 @@ marginalenergy <- function(train.set, n1train, n2train, gamfun) {
     int d = dimen[0];
 
     int n1train = ",
-      n1train,
-      ";
+    n1train,
+    ";
     int n2train = ",
-      n2train,
-      ";
+    n2train,
+    ";
     int ntrain = n1train + n2train;
 
     double **dataMAT;
@@ -723,19 +783,19 @@ marginalenergy <- function(train.set, n1train, n2train, gamfun) {
     } // the marginal energies are computed.
 
 ",
-      sep = ''
+sep = ''
     ),
-    gsqrt = paste(
-      "
+gsqrt = paste(
+  "
     int i, j, k;
     int d = dimen[0];
 
     int n1train = ",
-      n1train,
-      ";
+  n1train,
+  ";
     int n2train = ",
-      n2train,
-      ";
+  n2train,
+  ";
     int ntrain = n1train + n2train;
 
     double **dataMAT;
@@ -794,19 +854,19 @@ marginalenergy <- function(train.set, n1train, n2train, gamfun) {
     } // the marginal energies are computed.
 
 ",
-      sep = ''
-    ),
-    glog = paste(
-      "
+sep = ''
+),
+glog = paste(
+  "
     int i, j, k;
     int d = dimen[0];
 
     int n1train = ",
-      n1train,
-      ";
+  n1train,
+  ";
     int n2train = ",
-      n2train,
-      ";
+  n2train,
+  ";
     int ntrain = n1train + n2train;
 
     double **dataMAT;
@@ -865,19 +925,19 @@ marginalenergy <- function(train.set, n1train, n2train, gamfun) {
     } // the marginal energies are computed.
 
 ",
-      sep = ''
-    ),
-    grat = paste(
-      "
+sep = ''
+),
+grat = paste(
+  "
     int i, j, k;
     int d = dimen[0];
 
     int n1train = ",
-      n1train,
-      ";
+  n1train,
+  ";
     int n2train = ",
-      n2train,
-      ";
+  n2train,
+  ";
     int ntrain = n1train + n2train;
 
     double **dataMAT;
@@ -936,8 +996,8 @@ marginalenergy <- function(train.set, n1train, n2train, gamfun) {
     } // the marginal energies are computed.
 
 ",
-      sep = ''
-    )
+sep = ''
+)
   )
   
   

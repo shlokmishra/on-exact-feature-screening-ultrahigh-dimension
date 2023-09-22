@@ -8,7 +8,7 @@ tst.sz.perClass = 250 # size of test sample from each class in all simulated exa
 # cluster.type = ifelse(OS.var == 'W', 'PSOCK', 'FORK')
 cluster.type = 'PSOCK'
 #------------------------------------------------------------------------------
-EXNAMES = paste('ex', 1, sep = '')
+EXNAMES = paste('ex', c(8), sep = '')
 #------------------------------------------------------------------------------
 PCKG = c(
   'energy',
@@ -23,7 +23,8 @@ PCKG = c(
   'inline',
   'VariableScreening',
   'utils',
-  'e1071'
+  'e1071',
+  'Peacock.test'
 )
 
 install.packages(setdiff(PCKG, rownames(installed.packages())))
@@ -48,7 +49,7 @@ gamfuns = c('gexp', 'gsqrt', 'glog') #choice of gamma functions
 d = 10 #dimension
 revmu = 0.75 # the difference in mean for the marginal signal in examples 9-16
 
-exID = EXNAMES[1]
+# exID = EXNAMES[1]
 
 for (exID in EXNAMES) {
   switch (
@@ -704,19 +705,14 @@ for (exID in EXNAMES) {
     
     clusterExport(cl, c('train.set', 'test.set'))
     
-    gf = gamfuns[1]
+    # gf = gamfuns[1]
     
     for (gf in gamfuns) {
       clusterExport(cl, c('gf'))
       
       tmar = system.time({
         # time required to identify the marginal signals
-        margE = marginalenergy(
-          train.set = train.set,
-          n1train = n1train,
-          n2train = n2train,
-          gamfun = gf
-        )
+        margE = ks_test_1d(train.set, n1train, n2train)
         
         sort.margE = sort(margE)
         
@@ -798,13 +794,22 @@ for (exID in EXNAMES) {
       #screening by MixS begins here.
       tpair = system.time({
         #time required for computing the pXp matrix of energies induced by pairs of components
-        pairE = pairenergy(
-          train.set = train.set,
-          n1train = n1train,
-          n2train = n2train,
-          no.cores = round(no.cores * 3 / 4),
-          gamfun = gf
-        )
+        # pairE = pairenergy(
+        #   train.set = train.set,
+        #   n1train = n1train,
+        #   n2train = n2train,
+        #   no.cores = round(no.cores * 3 / 4),
+        #   gamfun = gf
+        # )
+        
+        # pairE2 = matrix(0, d, d)
+        # for (i in 1:d) {
+        #   for (j in i:d) {
+        #     pairE2[i][j] = peacock2(train.set[,i], train.set[,j])
+        #   }
+        # }\
+        
+        pairE = t(ks_test_2d(train.set, n1train, n2train))
       })
       
       tnbp = system.time({
@@ -1423,7 +1428,7 @@ for (exID in EXNAMES) {
   write.csv(out, out.name, row.names = F)
   close(pb)
   print(paste(exID, 'is done.', sep = ' '))
-
+  
 }
 
 stopCluster(cl)
