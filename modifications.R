@@ -1,3 +1,13 @@
+# Function to format the lists
+format_list <- function(lst) {
+  sapply(lst, function(x) {
+    if(length(x) > 1) {
+      return(paste0("{", paste(x, collapse = ","), "}"))
+    } else {
+      return(as.character(x))
+    }
+  })
+}
 
 ks_test_1d <- function(train.set, n1train, n2train) {
     d = ncol(train.set)
@@ -111,3 +121,71 @@ xtest <- matrix(rnorm(12, 0, 1), ncol=3)
 ytest <- matrix(rnorm(18, 0, 1), ncol=3)
 ks3dtest <- peacock3(xtest, ytest)
 ks3dtest
+
+
+library(readr)
+
+# List of file paths
+file_paths <- c(
+  "signals_1.csv",
+  "signals_2.csv",
+  "signals_4.csv",
+  "signals_5.csv",
+  "signals_6.csv",
+  "signals_7.csv",
+  "signals_8.csv"
+)
+
+# Function to calculate the number of exact matching rows for a file
+calculate_matching_rows <- function(file_path) {
+  df <- read_csv(file_path)
+  matching_rows <- nrow(df[df[[1]] == df[[2]],])
+  return(matching_rows)
+}
+
+# Calculate matching counts for each file
+matching_counts <- sapply(file_paths, calculate_matching_rows)
+names(matching_counts) <- file_paths
+
+print(matching_counts)
+
+
+library(readr)
+library(stringr)
+
+# Function to extract components from a cell
+extract_components <- function(cell) {
+  # Extracting pairs
+  pairs <- str_extract_all(cell, "\\{\\d+,\\d+\\}") %>% unlist()
+  
+  # Extracting standalone components
+  standalone <- str_extract_all(cell, "(?<!\\{)\\d+(?!\\})") %>% unlist()
+  
+  return(list(pairs = pairs, standalone = standalone))
+}
+
+# Function to count matching pairs and standalone components for a row
+count_matches <- function(first_col, second_col) {
+  first_components <- extract_components(first_col)
+  second_components <- extract_components(second_col)
+  
+  matching_pairs <- sum(first_components$pairs %in% second_components$pairs)
+  matching_standalone <- sum(first_components$standalone %in% second_components$standalone)
+  
+  return(c(matching_pairs, matching_standalone))
+}
+
+# List of file paths
+file_paths <- c(
+  "signals_1.csv",
+  "signals_2.csv",
+  "signals_4.csv",
+  "signals_5.csv",
+  "signals_6.csv",
+  "signals_7.csv",
+  "signals_8.csv"
+)
+
+# Process each file
+
+     

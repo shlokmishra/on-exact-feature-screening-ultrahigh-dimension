@@ -1,14 +1,14 @@
 rm(list = ls())
 #------------------------------------------------------------------------------
 set.seed(123)
-REP = 100 # number of iterations to run.
+REP = 50 # number of iterations to run.
 trn.sz.perClass = 100 # size of training sample from each class in all simulated examples Ex 1- 16 except Ex 8
 tst.sz.perClass = 250 # size of test sample from each class in all simulated examples
 # OS.var = readline(prompt = 'If you are on Windows, please type "W". Otherwise type "O": ')
 # cluster.type = ifelse(OS.var == 'W', 'PSOCK', 'FORK')
 cluster.type = 'PSOCK'
 #------------------------------------------------------------------------------
-EXNAMES = paste('ex', c(8), sep = '')
+EXNAMES = paste('ex', c(4,5,6,7,8), sep = '')
 #------------------------------------------------------------------------------
 PCKG = c(
   'energy',
@@ -394,7 +394,16 @@ for (exID in EXNAMES) {
       #   proc.time()[3] - ptm[3]
       # ) / 60), " Minutes")
     )
+  out2 <- data.frame(listS = character(REP), listShat = character(REP), stringsAsFactors = FALSE)
+  # out2$marg<- vector("list", length = REP) # Initialize a list column
+  
+  
   for (iter in 1:REP) {
+    # marg_sig <- vector("list", REP)
+    # marg_sig <- numeric(length = REP)
+    # margpair_sig <- vector("list", REP)
+    # correct_sig  <- vector("list", REP)
+    
     switch (
       exID,
       ex1 = {
@@ -809,7 +818,7 @@ for (exID in EXNAMES) {
         #   }
         # }\
         
-        pairE = t(ks_test_2d(train.set, n1train, n2train))
+        pairE = ks_test_2d(train.set, n1train, n2train)
       })
       
       tnbp = system.time({
@@ -868,6 +877,12 @@ for (exID in EXNAMES) {
         # Ecut = which.max(b.rat)
         
         sig.pos.est = which(blockE %in% sort.blockE[1:(length(sort.blockE)) > Ecut]) # selected pairs
+        # Convert matrix rows into strings of pairs
+        selected_pairs <- Dpairs[sig.pos.est, , drop=FALSE]
+        pair_strings <- apply(selected_pairs, 1, function(x) paste(x, collapse = "-"))
+        # Add it to the out2 dataframe
+        out2$pair[iter] <- paste(pair_strings, collapse = ", ")
+        
         clusterExport(cl, c('Dpairs', 'margE'))
         pair.key = foreach(
           val = 1:length(sig.pos.est),
@@ -1047,6 +1062,11 @@ for (exID in EXNAMES) {
       IC.tmp[!is.na(IC.tmp)] = 1
       IC.tmp[is.na(IC.tmp)] = 0
       IC = sum(IC.tmp) # how many components are correctly identified
+
+      out2$listS[iter] <- paste(format_list(listS), collapse = ", ")
+      out2$listShat[iter] <- paste(format_list(listShat), collapse = ", ")
+      marg_string <- paste(marg.var, collapse = ", ")
+      out2$marg[iter] <- marg_string
       
       tMixSclassctn <- system.time({
         newtrain = as.matrix(train.set[, final_select])
@@ -1327,7 +1347,7 @@ for (exID in EXNAMES) {
       'Cap.Noise' = tru.nois
     ) #screening performance of all methods
     
-    ERR[[iter]] = c(
+     ERR[[iter]] = c(
       tmp,
       tMCSscreen[3] / 2,
       #time required for MCSSVMLIN screening
@@ -1423,9 +1443,47 @@ for (exID in EXNAMES) {
     ex15 = 'ErrorRates_15.csv',
     ex16 = 'ErrorRates_16.csv'
   )
+  out2.name = switch(
+    EXPR = exID,
+    ex1 = 'signals_1.csv',
+    ex2 = 'signals_2.csv',
+    ex3 = 'signals_3.csv',
+    ex4 = 'signals_4.csv',
+    ex5 = 'signals_5.csv',
+    ex6 = 'signals_6.csv',
+    ex7 = 'signals_7.csv',
+    ex8 = 'signals_8.csv',
+    ex9 = 'signals_9.csv',
+    ex10 = 'signals_10.csv',
+    ex11 = 'signals_11.csv',
+    ex12 = 'signals_12.csv',
+    ex13 = 'signals_13.csv',
+    ex14 = 'signals_14.csv',
+    ex15 = 'signals_15.csv',
+    ex16 = 'signals_16.csv'
+  )
   RESULT[[flg]] = out
   flg = flg+1
+  
+  # Convert each numeric vector in the list to a single character string
+  # marg_sig_str <- sapply(marg_sig, function(x) paste(x, collapse = ", "))
+  # marg_df <- data.frame(marginal_signals = marg_sig_str, stringsAsFactors = FALSE)
+  # out$'captured marginal signals' <- marg_df
+  # out$'listS' <- sapply(listS_results, paste, collapse=", ")
+  # out$'listShat' <-  sapply(listShat_results, paste, collapse=", ")
+  # out$'listS' <- vapply(listS_results, function(x) paste(x, collapse = ", "), character(1))
+  # out$'listShat' <- vapply(listShat_results, function(x) paste(x, collapse = ", "), character(1))
+  
+
+  # correct_df <- data.frame(correct_sig = rep(correct_sigs, each = REP), stringsAsFactors = FALSE)
+  # out$'correct signals' <- correct_df
+  
+  # out$'captured paired signals' <- pair_sig
+  # out$'sig.pos.est[[1]]' <- 
+  # out$'sig.pos.est[[2]]' <- 
   write.csv(out, out.name, row.names = F)
+  write.csv(out2, out2.name, row.names = F)
+  
   close(pb)
   print(paste(exID, 'is done.', sep = ' '))
   
