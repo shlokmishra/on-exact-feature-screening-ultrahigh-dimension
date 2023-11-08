@@ -1,5 +1,5 @@
 
-# Project Title: Model-Free Feature Screening for High-Dimensional Classification
+# Feature Screening for High-dimensional Data in Classification Problems
 
 ## Introduction
 In high-dimensional classification challenges, the presence of numerous irrelevant variables can impair the effectiveness of classifiers. Identifying and discarding these variables is crucial for improved accuracy, making feature screening a pivotal aspect of research in classification problems.
@@ -23,18 +23,9 @@ The project aims to:
 - Introduce a novel screening method that outperforms existing techniques.
 - Provide a coherent approach to feature selection and subsequent classification.
 
-## Usage
-To utilize the code for this project, follow the guidelines below:
-1. Prepare your dataset according to the specifications of the method.
-2. Run the screening procedure to identify relevant features and paired interactions.
-3. Apply the KDE and KDA based classifier to your screened dataset for classification.
-
-## Contributions
-This project welcomes contributions. If you have suggestions or improvements, please submit a pull request or open an issue.
-
-## License
-Specify the license under which this project is released.
+## Repository Usage
+[To be updated]
 
 ## Contact
-For queries or further information, please contact the project maintainers at [email address].
+For queries or further information, please contact  [shlokm21@iitk.ac.in].
 
