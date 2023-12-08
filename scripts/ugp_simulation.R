@@ -6,12 +6,12 @@ trn.sz.perClass = 100 # size of training sample from each class in all simulated
 tst.sz.perClass = 250 # size of test sample from each class in all simulated examples
 # OS.var = readline(prompt = 'If you are on Windows, please type "W". Otherwise type "O": ')
 # cluster.type = ifelse(OS.var == 'W', 'PSOCK', 'FORK')
-cluster.type = 'PSOCK'
+cluster.type = 'FORK'
 #------------------------------------------------------------------------------
-EXNAMES = paste('ex', c(1,2,8), sep = '')
+EXNAMES = paste('ex', c(1,2,4,5,6,7,8), sep = '')
 #------------------------------------------------------------------------------
 PCKG = c(
-  'energy',
+  # 'energy',
   'proxy',
   'parallelDist',
   'nbpMatching',
@@ -21,14 +21,14 @@ PCKG = c(
   'RcppArmadillo',
   'RcppXPtrUtils',
   'inline',
-  'VariableScreening',
+  # 'VariableScreening',
   'utils',
   'e1071',
   'Peacock.test',
   'ks'
 )
 
-install.packages(setdiff(PCKG, rownames(installed.packages())))
+# install.packages(setdiff(PCKG, rownames(installed.packages())))
 lapply(PCKG, library, character.only = T)
 
 #------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ names(RESULT) = EXNAMES
 out = NULL
 pb = ERR = NULL
 gamfuns = c('gexp', 'gsqrt', 'glog') #choice of gamma functions
-d = 1000 #dimension
+d = 10 #dimension
 revmu = 0.75 # the difference in mean for the marginal signal in examples 9-16
 
 # exID = EXNAMES[1]
@@ -204,7 +204,7 @@ pb <-
   )
 
 out2 <- data.frame(listS = character(REP), stringsAsFactors = FALSE)
-
+# test.out <- data.frame(margE = character(REP), stringsAsFactors = FALSE)
 for (iter in 1:REP) {
   switch (
     exID,
@@ -490,9 +490,45 @@ for (iter in 1:REP) {
       sig.pos.est = which(margE %in% sort.margE[1:(length(sort.margE)) > Ecut]) # selected components
       marg.var = sig.pos.est
     }) #identification of marginal signals ends here
+    
+    # alt.tmar = system.time({
+    #   margE = ks_test_1d(train.set, n1train, n2train)
+    #   
+    #   # Sort margE
+    #   sort.margE = sort(margE)
+    #   
+    #   # Calculate the differences between consecutive elements
+    #   diffs = diff(sort.margE)
+    #   
+    #   # Calculate the ratio of each difference to the previous difference
+    #   # Avoid division by zero by replacing 0 with a small number (e.g., .Machine$double.eps)
+    #   diffs_ratios = c(Inf, diffs[-1] / pmax(diffs[-length(diffs)], .Machine$double.eps))
+    #   
+    #   # Calculate the mean of diffs_ratios excluding Inf
+    #   mean_diffs_ratios = mean(diffs_ratios[is.finite(diffs_ratios)])
+    #   
+    #   # Establish a threshold for significant jump
+    #   # Example: mean(diffs_ratios) * some_factor
+    #   threshold = mean_diffs_ratios * 0.1*1e-12  # Adjust the factor as necessary
+    #   
+    #   # Find positions where the ratio exceeds the threshold
+    #   significant_jumps = which(diffs_ratios > threshold)
+    #   
+    #   # If there are no significant jumps, consider the last position
+    #   if (length(significant_jumps) == 0) {
+    #     significant_jumps = length(diffs_ratios)
+    #   }
+    #   
+    #   # The signal is constituted by the elements after the first significant jump
+    #   sig.pos.est = which(margE %in% sort.margE[(min(significant_jumps)+1):length(sort.margE)])
+    #   marg.var = sig.pos.est
+    # })
+    
+    # margE_string <- paste(margE, collapse = ", ")
+    # test.out$margE[iter] <- margE_string
     marg_string <- paste(marg.var, collapse = ", ")
     out2$marg[iter] <- marg_string
-    plot(sort.margE, type='o', col='blue', xlab='Index', ylab='Values', main='Plot of Sorted KS Statistics')
+    # plot(sort.margE, type='o', col='blue', xlab='Index', ylab='Values', main='Plot of Sorted KS Statistics')
     
     
     #classification based on marginal signals begins here
@@ -590,7 +626,16 @@ for (iter in 1:REP) {
   
   out2$listS[iter] <- paste(format_list(listS), collapse = ", ")
   # out2$listShat[iter] <- paste(format_list(listShat), collapse = ", ")
+  setTxtProgressBar(pb, iter)
+  cat(
+    paste('//', iter * 100 / REP, '% complete', sep = ''),
+    paste("Time Elapsed ", round((
+      proc.time()[3] - ptm[3]
+    ) / 60), " Minutes"),
+    " "
+  )
 }
+
 
 gc()
 
@@ -605,7 +650,14 @@ gc()
     ex7 = 'signals_7.csv',
     ex8 = 'signals_8.csv'
   )
+  
+  # test.out.name = switch(
+  #   EXPR = exID,
+  #   ex4 = 'margE_4.csv'
+  # )
+  
 write.csv(out2, out2.name, row.names = F)
+# write.csv(test.out, test.out.name, row.names = F)
 
 close(pb)
 print(paste(exID, 'is done.', sep = ' '))
