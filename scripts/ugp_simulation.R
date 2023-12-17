@@ -8,7 +8,7 @@ tst.sz.perClass = 250 # size of test sample from each class in all simulated exa
 # cluster.type = ifelse(OS.var == 'W', 'PSOCK', 'FORK')
 cluster.type = 'FORK'
 #------------------------------------------------------------------------------
-EXNAMES = paste('ex', c(1,2,4,5,6,7,8), sep = '')
+EXNAMES = paste('ex', c(8), sep = '')
 #------------------------------------------------------------------------------
 PCKG = c(
   # 'energy',
@@ -32,8 +32,8 @@ PCKG = c(
 lapply(PCKG, library, character.only = T)
 
 #------------------------------------------------------------------------------
-source('relevant_functions.R')
-source('modifications.R')
+source('../relevant_functions/relevant_functions.R')
+source('../relevant_functions/modifications.R')
 #main script starts here.
 
 no.cores = round(detectCores() - 1)
@@ -165,7 +165,7 @@ for (exID in EXNAMES) {
       no.s = 2 # 2 pairs
       sig.pos = c(1, 3) #seq(1, length.out = s, by = block.size)
       
-      n1train = n2train = 20
+      n1train = n2train = 100
       ntrain = n1train + n2train
       n1test = n2test = tst.sz.perClass
       n1 = n1train + n1test
@@ -211,7 +211,7 @@ for (iter in 1:REP) {
     ex1 = {
       pop1 = matrix(rnorm(n1 * d, mean = 0, sd = sqrt(1)), ncol = d)
       
-      pop2 = cbind(matrix(rnorm(n2 * 4, mean = 1, sd = sqrt(1)), ncol = 4), matrix(rnorm(n2 * (d-4), mean = 0, sd = sqrt(1)), ncol = d-4))
+      pop2 = cbind(matrix(rnorm(n2 * 4, mean = 5, sd = sqrt(1)), ncol = 4), matrix(rnorm(n2 * (d-4), mean = 0, sd = sqrt(1)), ncol = d-4))
       
     },
     
@@ -271,7 +271,7 @@ for (iter in 1:REP) {
     ex4 = {
       pop1 = matrix(rnorm(n1 * d, mean = 0, sd = sqrt(1)), ncol = d)
       
-      pop2 = cbind(matrix(rnorm(n2 * 4, mean = 0, sd = sqrt(1/3)), ncol = 4), matrix(rnorm(n2 * (d-4), mean = 0, sd = sqrt(1)), ncol = d-4))
+      pop2 = cbind(matrix(rnorm(n2 * 4, mean = 0, sd = sqrt(10)), ncol = 4), matrix(rnorm(n2 * (d-4), mean = 0, sd = sqrt(1)), ncol = d-4))
     },
     
     ex5 = {
@@ -304,7 +304,7 @@ for (iter in 1:REP) {
       pop2 = cbind(matrix(rcauchy(
         n = n2 * 4,
         location = 0,
-        scale = 5
+        scale = 10
       ), ncol = 4),
       matrix(rcauchy(
         n = n2 * (d-4),
@@ -318,7 +318,7 @@ for (iter in 1:REP) {
       pop1 = cbind(matrix(rnorm(
         n1 * 4, mean = 0, sd = sqrt(4)
       ), ncol = 4), matrix(rnorm(
-        n1 * (d - 4), mean = 0, sd = sqrt(1)
+        n1 * (d - 4), mean = 0, sd = sqrt(0.1)
       ), ncol = d - 4))
       
       pop2  = cbind(matrix(
@@ -327,7 +327,7 @@ for (iter in 1:REP) {
         ncol = 4
       ),
       matrix(rnorm(
-        n2 * (d-4), mean = 0, sd = sqrt(1)
+        n2 * (d-4), mean = 0, sd = sqrt(0.1)
       ), ncol = d-4))
     },
     
@@ -491,39 +491,6 @@ for (iter in 1:REP) {
       marg.var = sig.pos.est
     }) #identification of marginal signals ends here
     
-    # alt.tmar = system.time({
-    #   margE = ks_test_1d(train.set, n1train, n2train)
-    #   
-    #   # Sort margE
-    #   sort.margE = sort(margE)
-    #   
-    #   # Calculate the differences between consecutive elements
-    #   diffs = diff(sort.margE)
-    #   
-    #   # Calculate the ratio of each difference to the previous difference
-    #   # Avoid division by zero by replacing 0 with a small number (e.g., .Machine$double.eps)
-    #   diffs_ratios = c(Inf, diffs[-1] / pmax(diffs[-length(diffs)], .Machine$double.eps))
-    #   
-    #   # Calculate the mean of diffs_ratios excluding Inf
-    #   mean_diffs_ratios = mean(diffs_ratios[is.finite(diffs_ratios)])
-    #   
-    #   # Establish a threshold for significant jump
-    #   # Example: mean(diffs_ratios) * some_factor
-    #   threshold = mean_diffs_ratios * 0.1*1e-12  # Adjust the factor as necessary
-    #   
-    #   # Find positions where the ratio exceeds the threshold
-    #   significant_jumps = which(diffs_ratios > threshold)
-    #   
-    #   # If there are no significant jumps, consider the last position
-    #   if (length(significant_jumps) == 0) {
-    #     significant_jumps = length(diffs_ratios)
-    #   }
-    #   
-    #   # The signal is constituted by the elements after the first significant jump
-    #   sig.pos.est = which(margE %in% sort.margE[(min(significant_jumps)+1):length(sort.margE)])
-    #   marg.var = sig.pos.est
-    # })
-    
     # margE_string <- paste(margE, collapse = ", ")
     # test.out$margE[iter] <- margE_string
     marg_string <- paste(marg.var, collapse = ", ")
@@ -549,38 +516,6 @@ for (iter in 1:REP) {
         kde(train_class2[, i])
       })
       
-      # Step 3: Compute Aggregate Densities
-      compute_density <- function(x, kde_list) {
-        epsilon <- .Machine$double.eps^0.5  # A small positive number close to zero
-        
-        density_logs <- sapply(1:length(kde_list), function(i) {
-          pred_val <- predict(kde_list[[i]], x = x[i])
-          
-          # Use the estimate or the atomic value
-          density_estimate <- if(is.atomic(pred_val)) {
-            pred_val[1]
-          } else {
-            pred_val$estimate
-          }
-          
-          # Ensure the density estimate is strictly positive before taking log
-          density_estimate <- max(density_estimate, epsilon)
-          
-          log_val <- log(density_estimate)
-          
-          return(log_val)
-        })
-        return(sum(density_logs))
-      }
-      
-      # Step 4: Classify Test Data
-      classify_test_obs <- function(x) {
-        log_F_hat <- compute_density(x, f_hats) + log(n / (n + m))
-        log_G_hat <- compute_density(x, g_hats) + log(m / (n + m))
-        
-        DM <- log_F_hat - log_G_hat
-        ifelse(DM >= 0, 1, 2)
-      }
       
       test_data_subset <- test.set[, marg.var, drop = FALSE]
       test_predictions <- apply(test_data_subset, 1, classify_test_obs)
@@ -641,14 +576,14 @@ gc()
 
   out2.name = switch(
     EXPR = exID,
-    ex1 = 'signals_1.csv',
-    ex2 = 'signals_2.csv',
-    ex3 = 'signals_3.csv',
-    ex4 = 'signals_4.csv',
-    ex5 = 'signals_5.csv',
-    ex6 = 'signals_6.csv',
-    ex7 = 'signals_7.csv',
-    ex8 = 'signals_8.csv'
+    ex1 = '1.csv',
+    ex2 = '2.csv',
+    ex3 = '3.csv',
+    ex4 = '4.csv',
+    ex5 = '5.csv',
+    ex6 = '6.csv',
+    ex7 = '7.csv',
+    ex8 = '8.csv'
   )
   
   # test.out.name = switch(

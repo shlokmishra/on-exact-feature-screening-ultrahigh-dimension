@@ -62,3 +62,57 @@ ks_test_2d <- function(train.set, n1train, n2train) {
 }
 
 
+###CLASSIFIER
+compute_density <- function(x, kde_list) {
+  epsilon <- .Machine$double.eps^0.5  # A small positive number close to zero
+  
+  density_logs <- sapply(1:length(kde_list), function(i) {
+    pred_val <- predict(kde_list[[i]], x = x[i])
+    
+    # Use the estimate or the atomic value
+    density_estimate <- if(is.atomic(pred_val)) {
+      pred_val[1]
+    } else {
+      pred_val$estimate
+    }
+    
+    # Ensure the density estimate is strictly positive before taking log
+    density_estimate <- max(density_estimate, epsilon)
+    
+    log_val <- log(density_estimate)
+    
+    return(log_val)
+  })
+  return(sum(density_logs))
+}
+
+# Step 4: Classify Test Data
+classify_test_obs <- function(x) {
+  log_F_hat <- compute_density(x, f_hats) + log(n / (n + m))
+  log_G_hat <- compute_density(x, g_hats) + log(m / (n + m))
+  
+  DM <- log_F_hat - log_G_hat
+  ifelse(DM >= 0, 1, 2)
+}
+
+
+compute_bivariate_density <- function(x, kde_list) {
+  log_densities <- sapply(1:length(kde_list), function(i) {
+    input_matrix <- matrix(x[((i-1)*2+1):(i*2)], nrow = 1, byrow = TRUE)
+    pred_val <- predict(kde_list[[i]], x = input_matrix)
+    
+    # Ensure density estimates are non-zero by adding epsilon
+    density_estimate <- ifelse(is.atomic(pred_val), pred_val, pred_val$estimate) + epsilon
+    
+    log(density_estimate)
+  })
+  return(sum(log_densities))
+}
+
+classify_bivariate_test_obs <- function(x) {
+  log_F_hat <- compute_bivariate_density(x, f_hats) + log(n / (n + m))
+  log_G_hat <- compute_bivariate_density(x, g_hats) + log(m / (n + m))
+  
+  DM <- log_F_hat - log_G_hat
+  ifelse(DM >= 0, 1, 2)
+}
