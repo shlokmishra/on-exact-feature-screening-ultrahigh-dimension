@@ -63,12 +63,44 @@ parameter_select <- function(K, type) {
     w <- 1 / normdiff
     w <- w / sum(w)
     
-    norm2mu <- sum(w * (K %*% w))
-    normdiff <- sqrt(diag(K) + norm2mu - 2 * K %*% w)
+    # Check for NA or NaN in w
+    if (any(is.na(w) | is.nan(w))) {
+      warning("NA or NaN values found in weights (w)")
+      break
+    }
     
+    norm2mu <- sum(w * (K %*% w))
+    
+    # Check for NA or NaN in norm2mu
+    if (is.na(norm2mu) | is.nan(norm2mu)) {
+      warning("NA or NaN values found in norm2mu")
+      break
+    }
+    
+    sqrt_expression <- diag(K) + norm2mu - 2 * K %*% w
+    
+    # Check for NA or NaN in sqrt_expression
+    if (any(is.na(sqrt_expression) | is.nan(sqrt_expression))) {
+      warning("NA or NaN values found in sqrt_expression")
+      break
+    }
+    
+    # Ensure the expression inside sqrt is non-negative
+    if (any(sqrt_expression < 0)) {
+      warning("Negative values encountered in square root calculation")
+      break
+    }
+    
+    normdiff <- sqrt(sqrt_expression)
     J <- mean(normdiff)
     
-    if (abs(J - J_old) < J_old * tol) {
+    # Check for valid J and J_old before comparing
+    if (!is.na(J) && !is.nan(J) && !is.na(J_old) && !is.nan(J_old)) {
+      if (abs(J - J_old) < J_old * tol) {
+        break
+      }
+    } else {
+      warning("Invalid J or J_old encountered")
       break
     }
   }
@@ -188,4 +220,3 @@ legend("topright", legend = c("True", "KDE", "RKDE (Hampel)", "Nominal Sample", 
 
 # Note: Additional code is needed for displaying the influence function,
 # which depends on the specific implementation of the IF function in R.
-

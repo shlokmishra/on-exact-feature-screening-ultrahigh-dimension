@@ -1,0 +1,47 @@
+\documentclass[12pt]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[export]{adjustbox}
+\usepackage[a4paper, portrait, margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\usepackage{etoolbox}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{xcolor} 
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amssymb} % or you can use amssymb
+\usepackage{natbib}
+\usepackage{hyperref}
+\newtheorem{example}{Example}
+
+% Title page
+\title{\textbf{New Examples}}
+\author{Shlok Mishra}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{example}\label{ex2}
+    Let \( (X_1, \ldots, X_{d}) \sim \mathcal{N}_{d}(\mathbf{0},\mathbf{I}) \), \( (Y_1, \ldots, Y_{d}) \sim \mathcal{N}_{d}(\boldsymbol{\mu}_1,\mathbf{I}) \), and \( (Z_1, \ldots, Z_{d}) \sim \mathcal{N}_{d}(\boldsymbol{\mu}_2,\mathbf{I}) \), where \(\mathbf{0}\), \(\boldsymbol{\mu}_1\), and \(\boldsymbol{\mu}_2\) are distinct mean vectors, and \(\mathbf{I}\) denotes the identity matrix. Specifically, let \(\boldsymbol{\mu}_1 = (1,1,1,1,0,\ldots,0)^T\) and \(\boldsymbol{\mu}_2 = (2,2,2,2,0,\ldots,0)^T\). Here \(\mathcal{N}_{d}(\boldsymbol{\mu}, \mathbf{\Sigma})\) denotes the \(d\)-dimensional normal distribution with mean vector \(\boldsymbol{\mu}\) and covariance matrix \(\mathbf{\Sigma}\).
+\end{example}
+
+\begin{example}\label{ex2}
+    Suppose that \((X_1, X_2), (X_3, X_4) \sim \mathcal{N}_{2}(\mathbf{0}, \mathbf{\Sigma_1})\) with \(\mathbf{\Sigma_1} = \begin{pmatrix} 1 & 0.9 \\ 0.9 & 1 \end{pmatrix}\), \((Y_1, Y_2), (Y_3, Y_4) \sim \mathcal{N}_{2}(\mathbf{0}, \mathbf{\Sigma_2})\) with \(\mathbf{\Sigma_2} = \begin{pmatrix} 1 & -0.9 \\ -0.9 & 1 \end{pmatrix}\), and \((Z_1, Z_2), (Z_3, Z_4) \sim \mathcal{N}_{2}(\mathbf{0}, \mathbf{\Sigma_3})\) with \(\mathbf{\Sigma_3} = \begin{pmatrix} 1 & 0.5 \\ 0.5 & 1 \end{pmatrix}\). For each class, \(X_5, \ldots, X_{d}\), \(Y_5, \ldots, Y_{d}\), and \(Z_5, \ldots, Z_{d}\) are \textit{iid} \(\mathcal{N}(0,1)\). Here, \((X_1, \ldots, X_4)\), \((X_5, \ldots, X_{d})\), \((Y_1, \ldots, Y_{4})\), \((Y_5, \ldots, Y_{d})\), \((Z_1, \ldots, Z_{4})\), and \((Z_5, \ldots, Z_{d})\) are mutually independent and \textit{'iid'} stands for independent and identically distributed.
+\end{example}
+
+
+\end{document}

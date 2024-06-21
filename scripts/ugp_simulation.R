@@ -8,7 +8,7 @@ tst.sz.perClass = 250 # size of test sample from each class in all simulated exa
 # cluster.type = ifelse(OS.var == 'W', 'PSOCK', 'FORK')
 cluster.type = 'FORK'
 #------------------------------------------------------------------------------
-EXNAMES = paste('ex', c(8), sep = '')
+EXNAMES = paste('ex', c(1), sep = '')
 #------------------------------------------------------------------------------
 PCKG = c(
   # 'energy',
@@ -25,15 +25,18 @@ PCKG = c(
   'utils',
   'e1071',
   'Peacock.test',
-  'ks'
+  'ks',
+  'nprobust'
 )
 
 # install.packages(setdiff(PCKG, rownames(installed.packages())))
 lapply(PCKG, library, character.only = T)
 
 #------------------------------------------------------------------------------
+setwd("~/code/on-exact-feature-screening-ultrahigh-dimension/scripts")
 source('../relevant_functions/relevant_functions.R')
 source('../relevant_functions/modifications.R')
+
 #main script starts here.
 
 no.cores = round(detectCores() - 1)
@@ -332,16 +335,16 @@ for (iter in 1:REP) {
     },
     
     ex8 = {
-      pop1 = matrix(rnorm(n1 * d, mean = 0, sd = sqrt(1)), ncol = d)
-      
-      pop2 = matrix(rnorm(n2 * d, mean = 0, sd = sqrt(1)), ncol = d)
-      
-      tmp = foreach (k = 1:n2, .combine = rbind) %dopar% {
-        c(cycl(pop2[k, 1:2]), cycl(pop2[k, 3:4]))
+        pop1 = matrix(rnorm(n1 * d, mean = 0, sd = sqrt(1)), ncol = d)
+        
+        pop2 = matrix(rnorm(n2 * d, mean = 0, sd = sqrt(1)), ncol = d)
+        
+        tmp = foreach (k = 1:n2, .combine = rbind) %dopar% {
+          c(cycl(pop2[k, 1:2]), cycl(pop2[k, 3:4]))
+        }
+        pop2[, 1:4] = tmp
+        rm(tmp)
       }
-      pop2[, 1:4] = tmp
-      rm(tmp)
-    }
   )
   
   
@@ -360,6 +363,7 @@ for (iter in 1:REP) {
   
   clusterExport(cl, c('train.set', 'test.set'))
   
+  # iter <- 1
   if(exID == "ex2" | exID == "ex8"){
     tpair = system.time({
       pairE = ks_test_2d(train.set, n1train, n2train)
@@ -523,6 +527,37 @@ for (iter in 1:REP) {
       EMarclass = mean(test_predictions != test.lab) # Error rate
       # Ensure iter is defined outside this snippet as part of a larger loop
       out2$EmarClass[iter] <- EMarclass
+    })
+    
+    marclassRobust <- system.time({
+      # Step 1: Extract Marginal Data
+      train_class1 <- as.matrix(train.set[train.lab == 1, marg.var])
+      train_class2 <- as.matrix(train.set[train.lab == 2, marg.var])
+      
+      # Assuming bandwidth_select is defined elsewhere in your script
+      
+      # Step 2: Compute RKDEs with dynamic bandwidth selection
+      f_hats_rkde <- lapply(1:ncol(train_class1), function(i) {
+        # Use bandwidth_select to obtain optimal bandwidth for current column
+        h_opt <- bandwidth_select(train_class1[, i, drop=FALSE], b_type = 1)  # Adjust b_type as needed
+        robkde(train_class1[, i, drop=FALSE], h_opt, type = 1)
+      })
+      
+      g_hats_rkde <- lapply(1:ncol(train_class2), function(i) {
+        # Use bandwidth_select to obtain optimal bandwidth for current column
+        h_opt <- bandwidth_select(train_class2[, i, drop=FALSE], b_type = 1)  # Adjust b_type as needed
+        robkde(train_class2[, i, drop=FALSE], h_opt, type = 1)
+      })
+      
+      # Step 3: Classify Test Observations
+      test_data_subset <- test.set[, marg.var, drop = FALSE]
+      test_predictions <- apply(test_data_subset, 1, function(x) classify_test_obs_rkde(x, f_hats_rkde, g_hats_rkde))
+      
+      # Step 4: Calculate Error Rate
+      EMarclassRob <- mean(test_predictions != test.lab) # Error rate
+      
+      # Ensure iter is defined outside this snippet as part of a larger loop
+      out2$EmarClass[iter] <- EMarclassRob
     })
     
     
